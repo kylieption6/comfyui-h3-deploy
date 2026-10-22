@@ -7,6 +7,8 @@
 - **全程走国内镜像**：ComfyUI 走 `ghfast.top` 等 GitHub 代理（多镜像回退）、pip 走阿里云 / 清华、模型走 `hf-mirror.com`
 - **全 int8 模型**：hybrid b25-49、Qwen3-VL-32B 编码器、视频 VAE，体积与速度平衡
 - **3 种生成模式**：文生（T2V）、图生（I2V）、参考生（R2V），均可 4 步加速
+- **自动安装工作流**：把 T2V / I2V / R2V 三份工作流写入 ComfyUI 的 `user/default/workflows/`
+- **输入图自动入库**：`--first-frame` / `--ref-images` 的图片自动复制到 ComfyUI `input/`（保留原文件名）
 - **幂等可重跑**：目录/文件已存在自动跳过，不重复下载、不重复启动
 - **Cloudflare 快速隧道**：免端口映射，直接给公网 URL
 
@@ -47,7 +49,20 @@ python3 deploy_comfyui_h3.py --root ~/h3 --no-generate
 | `--no-tunnel` | — | 不建 Cloudflare 隧道 |
 | `--no-models` | — | 跳过模型下载 |
 | `--no-generate` | — | 只部署不生成 |
+| `--no-workflows` | — | 不安装工作流 JSON |
 | `--skip-install` / `--skip-clone` | — | 跳过安装 / 克隆 |
+
+## 自动安装的工作流
+
+脚本会把仓库 `workflows/` 下的三份 JSON 复制到 `ComfyUI/user/default/workflows/`：
+
+| 文件 | 用途 |
+|---|---|
+| `minimax_h3_t2v_turbo_4step_v1.0.json` | 文生视频 |
+| `minimax_h3_i2v_turbo_4step_v1.0.json` | 图生视频（默认加载 `input/1.png`） |
+| `minimax_h3_ref2v_turbo_4step_v1.0.json` | 参考生视频（默认加载 `input/1.png`） |
+
+用 `--first-frame` / `--ref-images` 指定的本地图片会自动复制进 `ComfyUI/input/`，文件名保持不变。
 
 ## 自动下载的模型
 

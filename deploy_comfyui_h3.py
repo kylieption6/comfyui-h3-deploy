@@ -525,8 +525,8 @@ def main():
     parser.add_argument("--prompt", default=("A cinematic close-up of a white fox running through a snowy pine forest at dawn, "
                                              "breath visible in the cold air, slow motion, shallow depth of field. "
                                              "Audio: soft wind, snow crunching, distant birds."))
-    parser.add_argument("--width", type=int, default=1344)
-    parser.add_argument("--height", type=int, default=768)
+    parser.add_argument("--width", type=int, default=768)
+    parser.add_argument("--height", type=int, default=1344)
     parser.add_argument("--seconds", type=float, default=5.17)
     parser.add_argument("--length", type=int, default=0, help="帧数(17k+5)，优先于 --seconds")
     parser.add_argument("--seed", type=int, default=42)

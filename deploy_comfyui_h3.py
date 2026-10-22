@@ -357,15 +357,47 @@ def snap_frames(seconds):
     return n + (5 - n % 17) % 17
 
 
+def file_bytes_digest(data: bytes):
+    import hashlib
+    return hashlib.sha256(data).hexdigest()
+
+
 def copy_input(comfy: Path, src: Path, prefix):
     src = Path(src).expanduser()
     if not src.exists():
         raise RuntimeError(f"输入图片不存在: {src}")
     inp = comfy / "input"
     inp.mkdir(parents=True, exist_ok=True)
-    name = f"deploy_{prefix}_{int(time.time())}_{src.name}"
-    shutil.copy(src, inp / name)
-    return name
+    data = src.read_bytes()
+    target = inp / src.name
+    if target.exists() and file_bytes_digest(target.read_bytes()) != file_bytes_digest(data):
+        target = inp / f"{src.stem}_{prefix}{src.suffix}"
+    if target.exists() and file_bytes_digest(target.read_bytes()) == file_bytes_digest(data):
+        log(f"输入图片已在 input 目录: {target.name}")
+        return target.name
+    target.write_bytes(data)
+    log(f"输入图片已复制到 input: {target.name}")
+    return target.name
+
+
+def ensure_workflows(comfy: Path, script_dir: Path, enabled=True):
+    if not enabled:
+        log("跳过工作流安装（--no-workflows）")
+        return
+    src = script_dir / "workflows"
+    if not src.is_dir():
+        log(f"未找到工作流目录 {src}，跳过")
+        return
+    dst = comfy / "user" / "default" / "workflows"
+    dst.mkdir(parents=True, exist_ok=True)
+    for item in sorted(src.glob("*.json")):
+        data = item.read_bytes()
+        target = dst / item.name
+        if target.exists() and target.read_bytes() == data:
+            log(f"工作流已存在: {item.name}")
+            continue
+        target.write_bytes(data)
+        log(f"已安装工作流: {item.name}")
 
 
 def build_graph(prompt, width, height, length, seed, mode, images):
@@ -483,6 +515,7 @@ def main():
     parser.add_argument("--no-tunnel", action="store_true")
     parser.add_argument("--no-models", action="store_true")
     parser.add_argument("--no-generate", action="store_true")
+    parser.add_argument("--no-workflows", action="store_true")
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--skip-clone", action="store_true")
     args = parser.parse_args()
@@ -498,6 +531,7 @@ def main():
     py = ensure_python_env(comfy, args.skip_install)
     cuda_report(py)
     ensure_models(comfy / "models", args.hf_mirror, args.no_models)
+    ensure_workflows(comfy, Path(__file__).resolve().parent, not args.no_workflows)
     ensure_server(comfy, py, args.port)
     tunnel = ensure_tunnel(root, args.port, not args.no_tunnel)
 

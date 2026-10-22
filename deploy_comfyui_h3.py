@@ -380,6 +380,28 @@ def copy_input(comfy: Path, src: Path, prefix):
     return target.name
 
 
+def ensure_example_inputs(comfy: Path, script_dir: Path, enabled=True):
+    if not enabled:
+        log("跳过示例图片复制（--no-example）")
+        return
+    src = script_dir / "assets"
+    if not src.is_dir():
+        log(f"未找到示例图片目录 {src}，跳过")
+        return
+    inp = comfy / "input"
+    inp.mkdir(parents=True, exist_ok=True)
+    for item in sorted(src.iterdir()):
+        if not item.is_file():
+            continue
+        data = item.read_bytes()
+        target = inp / item.name
+        if target.exists() and target.read_bytes() == data:
+            log(f"示例图片已存在: input/{item.name}")
+            continue
+        target.write_bytes(data)
+        log(f"已复制示例图片: input/{item.name}")
+
+
 def ensure_workflows(comfy: Path, script_dir: Path, enabled=True):
     if not enabled:
         log("跳过工作流安装（--no-workflows）")
@@ -516,6 +538,7 @@ def main():
     parser.add_argument("--no-models", action="store_true")
     parser.add_argument("--no-generate", action="store_true")
     parser.add_argument("--no-workflows", action="store_true")
+    parser.add_argument("--no-example", action="store_true")
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--skip-clone", action="store_true")
     args = parser.parse_args()
@@ -531,7 +554,9 @@ def main():
     py = ensure_python_env(comfy, args.skip_install)
     cuda_report(py)
     ensure_models(comfy / "models", args.hf_mirror, args.no_models)
-    ensure_workflows(comfy, Path(__file__).resolve().parent, not args.no_workflows)
+    script_dir = Path(__file__).resolve().parent
+    ensure_workflows(comfy, script_dir, not args.no_workflows)
+    ensure_example_inputs(comfy, script_dir, not args.no_example)
     ensure_server(comfy, py, args.port)
     tunnel = ensure_tunnel(root, args.port, not args.no_tunnel)
 

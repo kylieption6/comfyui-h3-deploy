@@ -8,7 +8,7 @@
 - **全 int8 模型**：hybrid b25-49、Qwen3-VL-32B 编码器、视频 VAE，体积与速度平衡
 - **3 种生成模式**：文生（T2V）、图生（I2V）、参考生（R2V），均可 4 步加速
 - **自动安装工作流**：把 T2V / I2V / R2V 三份工作流写入 ComfyUI 的 `user/default/workflows/`
-- **输入图自动入库**：`--first-frame` / `--ref-images` 的图片自动复制到 ComfyUI `input/`（保留原文件名）
+- **输入图自动入库**：自带 `assets/1.png` 自动放入 `input/`；`--first-frame` / `--ref-images` 的本地图片也按原名复制进 `input/`
 - **幂等可重跑**：目录/文件已存在自动跳过，不重复下载、不重复启动
 - **Cloudflare 快速隧道**：免端口映射，直接给公网 URL
 
@@ -18,7 +18,10 @@
 git clone https://github.com/kylieption6/comfyui-h3-deploy.git
 cd comfyui-h3-deploy
 
-# 一键：部署 + 文生视频
+# 全新机器一键：部署 + 隧道 + 示例图/工作流 + 文生视频测试
+python3 deploy_comfyui_h3.py --root ~/h3
+
+# 自定义提示词
 python3 deploy_comfyui_h3.py --root ~/h3 --prompt "A red paper lantern sways at night"
 
 # 图生视频
@@ -50,6 +53,7 @@ python3 deploy_comfyui_h3.py --root ~/h3 --no-generate
 | `--no-models` | — | 跳过模型下载 |
 | `--no-generate` | — | 只部署不生成 |
 | `--no-workflows` | — | 不安装工作流 JSON |
+| `--no-example` | — | 不复制 `assets/1.png` 到 input |
 | `--skip-install` / `--skip-clone` | — | 跳过安装 / 克隆 |
 
 ## 自动安装的工作流
@@ -62,7 +66,8 @@ python3 deploy_comfyui_h3.py --root ~/h3 --no-generate
 | `minimax_h3_i2v_turbo_4step_v1.0.json` | 图生视频（默认加载 `input/1.png`） |
 | `minimax_h3_ref2v_turbo_4step_v1.0.json` | 参考生视频（默认加载 `input/1.png`） |
 
-用 `--first-frame` / `--ref-images` 指定的本地图片会自动复制进 `ComfyUI/input/`，文件名保持不变。
+仓库自带 `assets/1.png`，部署时自动复制到 `ComfyUI/input/1.png`，I2V/R2V 工作流开箱即用。
+用 `--first-frame` / `--ref-images` 指定的本地图片也会自动复制进 `ComfyUI/input/`，文件名保持不变。
 
 ## 自动下载的模型
 
@@ -76,6 +81,8 @@ python3 deploy_comfyui_h3.py --root ~/h3 --no-generate
 | R2V 加速 LoRA | `minimax_h3_ref2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors` | 1.82 GiB |
 
 合计约 52 GiB，需自行保证磁盘余量。
+
+默认执行一次 T2V 生成（`--no-generate` 可关闭），完成后打印 `PUBLIC_URL` 与 `VIDEO_PATH`。
 
 ## 测试结果（A100 80GB）
 
